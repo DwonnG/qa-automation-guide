@@ -270,7 +270,7 @@ element = wait.until(EC.element_to_be_clickable((By.ID, "submit")))
 5. **Features Not To Be Tested**
 6. **Configuring Environment For Testing**
 7. **Diagrams**
-8. **Confluence Documents Summary**
+8. **Technical Documents Summary**
 9. **Test Cases**
 10. **Resources & Responsibilities & Preconditions**
 11. **Schedule**
