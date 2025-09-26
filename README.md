@@ -7,6 +7,7 @@
 - [4 Testing Pillars Framework](#4-testing-pillars-framework)
 - [Test Data & Fixtures](#test-data--fixtures)
 - [Common Patterns](#common-patterns)
+- [Debugging Test Failures](#debugging-test-failures)
 
 ---
 
@@ -517,3 +518,192 @@ assert login_page.is_error_displayed()
 ```
 
 </details>
+
+
+## **Debugging Test Failures**
+
+### **Test Failure Debugging Checklist**
+
+<details>
+<summary>Click to expand debugging checklist</summary>
+
+#### **1. Environment & Setup Issues**
+- [ ] **Test environment accessible?** Check URLs, services running
+- [ ] **Authentication valid?** Tokens, credentials not expired
+- [ ] **Database state clean?** Previous test data interfering
+- [ ] **Feature flags correct?** Environment-specific configurations
+- [ ] **Network connectivity?** API endpoints reachable
+- [ ] **Browser/driver versions?** Compatibility issues
+
+#### **2. Timing & Synchronization**
+- [ ] **Implicit waits sufficient?** Elements loading slowly
+- [ ] **Explicit waits used?** `WebDriverWait` for dynamic content
+- [ ] **Race conditions?** Tests running too fast
+- [ ] **Async operations?** API calls, AJAX requests completing
+- [ ] **Page load timing?** Heavy pages, slow responses
+- [ ] **Animation/transitions?** UI elements still moving
+
+#### **3. Test Data Issues**
+- [ ] **Data dependencies?** Required records exist
+- [ ] **Unique constraints?** Duplicate data conflicts
+- [ ] **Data cleanup?** Previous test pollution
+- [ ] **Dynamic data generation?** Faker, UUID working correctly
+- [ ] **Test isolation?** Tests affecting each other
+- [ ] **Permissions/roles?** User has required access
+
+#### **4. Element Location Problems**
+- [ ] **Locators still valid?** UI changes breaking selectors
+- [ ] **Element visibility?** Hidden, overlapped, or off-screen
+- [ ] **Frame/window context?** Switched to correct frame
+- [ ] **Dynamic IDs?** Generated IDs changing
+- [ ] **CSS/XPath accuracy?** Selectors too brittle
+- [ ] **Multiple matches?** Locator finding wrong element
+
+#### **5. API-Specific Issues**
+- [ ] **HTTP status codes?** Expected vs actual responses
+- [ ] **Request headers?** Authentication, content-type
+- [ ] **Request payload?** JSON structure, required fields
+- [ ] **Response format?** JSON parsing, field names
+- [ ] **Rate limiting?** Too many requests
+- [ ] **Endpoint changes?** API version, URL modifications
+
+#### **6. Test Logic & Code**
+- [ ] **Assertions correct?** Expected vs actual values
+- [ ] **Exception handling?** Proper try/catch blocks
+- [ ] **Variable scope?** Accessing correct variables
+- [ ] **Method calls?** Correct parameters passed
+- [ ] **Loop logic?** Infinite loops, wrong conditions
+- [ ] **Test sequence?** Dependent tests in correct order
+
+#### **7. Infrastructure & CI/CD**
+- [ ] **Resource availability?** Memory, CPU sufficient
+- [ ] **Parallel execution?** Tests conflicting with each other
+- [ ] **Container health?** Docker containers running
+- [ ] **Service dependencies?** External services available
+- [ ] **Build artifacts?** Correct version deployed
+- [ ] **Environment variables?** Configuration values set
+
+</details>
+
+### **Debugging Workflow**
+
+<details>
+<summary>Click to expand systematic debugging approach</summary>
+
+#### **Step 1: Reproduce Locally**
+```bash
+# Run the specific failing test
+pytest tests/test_failing.py::test_method -v -s
+
+# Run with maximum logging
+pytest tests/test_failing.py::test_method -v -s --log-cli-level=DEBUG
+
+# Run in headed mode (for UI tests)
+pytest tests/test_failing.py::test_method --headed
+```
+
+#### **Step 2: Gather Information**
+```python
+# Add debugging prints
+print(f"Current URL: {driver.current_url}")
+print(f"Page title: {driver.title}")
+print(f"Response status: {response.status_code}")
+print(f"Response body: {response.text}")
+
+# Take screenshots (UI tests)
+driver.save_screenshot("debug_failure.png")
+
+# Capture page source
+with open("debug_page_source.html", "w") as f:
+    f.write(driver.page_source)
+```
+
+#### **Step 3: Isolate the Problem**
+```python
+# Test individual components
+def test_debug_login_only():
+    login_page.login("user", "pass")
+    assert login_page.is_logged_in()  # Does login work?
+
+def test_debug_api_only():
+    response = api_client.get_user(user_id)
+    assert response.status_code == 200  # Does API work?
+```
+
+#### **Step 4: Add Resilience**
+```python
+# Implement retry logic
+@pytest.mark.retry(3)
+def test_with_retry():
+    # Test implementation
+    pass
+
+# Add better waits
+def wait_for_element_clickable(locator, timeout=10):
+    return WebDriverWait(driver, timeout).until(
+        EC.element_to_be_clickable(locator)
+    )
+
+# Implement fallback strategies
+def robust_click(locator):
+    try:
+        element = wait_for_element_clickable(locator)
+        element.click()
+    except TimeoutException:
+        # Fallback: JavaScript click
+        element = driver.find_element(*locator)
+        driver.execute_script("arguments[0].click();", element)
+```
+
+</details>
+
+### **Common Failure Patterns & Solutions**
+
+<details>
+<summary>Click to expand common failure patterns</summary>
+
+#### **Flaky Tests**
+```python
+# Problem: Test passes sometimes, fails others
+# Solutions:
+- Add explicit waits instead of sleep()
+- Use dynamic test data (avoid hardcoded values)
+- Implement proper cleanup in fixtures
+- Check for race conditions in parallel execution
+```
+
+#### **Environment-Specific Failures**
+```python
+# Problem: Works locally, fails in CI
+# Solutions:
+- Check environment variables and configurations
+- Verify service dependencies are available
+- Add environment-specific waits (CI often slower)
+- Use containerization for consistency
+```
+
+#### **Data-Dependent Failures**
+```python
+# Problem: Test depends on specific database state
+# Solutions:
+@pytest.fixture
+def clean_database():
+    # Setup known state
+    db.clear_all_users()
+    yield
+    # Cleanup
+    db.clear_all_users()
+```
+
+#### **Stale Element Exceptions**
+```python
+# Problem: Element reference becomes invalid
+# Solution: Re-locate elements
+def robust_send_keys(locator, text):
+    element = driver.find_element(*locator)  # Fresh reference
+    element.clear()
+    element.send_keys(text)
+```
+
+</details>
+
