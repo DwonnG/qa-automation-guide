@@ -524,8 +524,8 @@ assert login_page.is_error_displayed()
 
 ### **Test Failure Debugging Checklist**
 
-<details>
-<summary>Click to expand debugging checklist</summary>
+<details open>
+<summary>Debugging checklist</summary>
 
 #### **1. Environment & Setup Issues**
 - [ ] **Test environment accessible?** Check URLs, services running
@@ -587,8 +587,8 @@ assert login_page.is_error_displayed()
 
 ### **Debugging Workflow**
 
-<details>
-<summary>Click to expand systematic debugging approach</summary>
+<details open>
+<summary>Systematic debugging approach</summary>
 
 #### **Step 1: Reproduce Locally**
 ```bash
@@ -659,8 +659,8 @@ def robust_click(locator):
 
 ### **Common Failure Patterns & Solutions**
 
-<details>
-<summary>Click to expand common failure patterns</summary>
+<details open>
+<summary>Common failure patterns</summary>
 
 #### **Flaky Tests**
 ```python
